@@ -34,7 +34,6 @@ export default function RootLayout({
       <head>
         <meta name="version" content={buildConfig.commitId} />
         <link rel="manifest" href="/site.webmanifest"></link>
-        <script src="/weixinqq.js" defer></script>
         <script src="/serviceWorkerRegister.js" defer></script>
       </head>
       <body>{children}</body>
