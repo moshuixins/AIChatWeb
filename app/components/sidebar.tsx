@@ -19,7 +19,7 @@ import Locale from "../locales";
 
 import { Modal } from "./ui-lib";
 
-import { useAppConfig, useChatStore } from "../store";
+import { useAppConfig, useAuthStore, useChatStore } from "../store";
 import { useWebsiteConfigStore, useNoticeConfigStore } from "../store";
 
 import {
@@ -159,6 +159,8 @@ export function SideBar(props: {
   noticeTitle: string;
   noticeContent: string;
   setNoticeShow: (show: boolean) => void;
+  logoLoading: boolean;
+  logoUrl?: string;
 }) {
   const chatStore = useChatStore();
 
@@ -171,6 +173,9 @@ export function SideBar(props: {
 
   const websiteConfigStore = useWebsiteConfigStore();
   const noticeConfigStore = useNoticeConfigStore();
+
+  const logoLoading = props.logoLoading;
+  const logoUrl = props.logoUrl;
 
   return (
     <div
@@ -186,7 +191,13 @@ export function SideBar(props: {
           {websiteConfigStore.subTitle || "Build your own AI assistant."}
         </div>
         <div className={styles["sidebar-logo"] + " no-dark"}>
-          <NextImage src={ChatBotIcon.src} width={44} height={44} alt="bot" />
+          {logoLoading ? (
+            <></>
+          ) : !logoUrl ? (
+            <NextImage src={ChatBotIcon.src} width={44} height={44} alt="bot" />
+          ) : (
+            <img src={logoUrl} width={44} height={44} />
+          )}
         </div>
       </div>
 
@@ -235,19 +246,19 @@ export function SideBar(props: {
               <IconButton icon={<SettingsIcon />} shadow />
             </Link>
           </div>
-          <div className={styles["sidebar-action"]}>
-            <IconButton
-              icon={<BookOpenIcon />}
-              onClick={() => {
-                if (noticeConfigStore.show) {
+          {props.noticeTitle || props.noticeContent ? (
+            <div className={styles["sidebar-action"]}>
+              <IconButton
+                icon={<BookOpenIcon />}
+                onClick={() => {
                   props.setNoticeShow(true);
-                } else {
-                  showToast(Locale.Home.NoNotice);
-                }
-              }}
-              shadow
-            />
-          </div>
+                }}
+                shadow
+              />
+            </div>
+          ) : (
+            <></>
+          )}
           {!websiteConfigStore.hideGithubIcon ? (
             <div className={styles["sidebar-action"]}>
               <a href={REPO_URL} target="_blank">

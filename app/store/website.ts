@@ -9,12 +9,15 @@ export interface WebsiteConfigStore {
   registerPageSubTitle: string;
   pricingPageTitle: string;
   pricingPageSubTitle: string;
+  payPageTitle: string;
+  payPageSubTitle: string;
   chatPageSubTitle: string;
   sensitiveWordsTip: string;
   balanceNotEnough: string;
   registerTypes: string[];
   hideGithubIcon: boolean;
   botHello: string;
+  logoUrl?: string;
   fetchWebsiteConfig: () => Promise<any>;
 }
 
@@ -26,11 +29,14 @@ export interface WebsiteConfig {
   registerTypes: string[];
   pricingPageTitle: string;
   pricingPageSubTitle: string;
+  payPageTitle: string;
+  payPageSubTitle: string;
   chatPageSubTitle: string;
   sensitiveWordsTip: string;
   balanceNotEnough: string;
   hideGithubIcon: boolean;
   botHello: string;
+  logoUuid?: string;
 }
 export interface WebsiteConfigData {
   websiteContent: WebsiteConfig;
@@ -49,11 +55,14 @@ export const useWebsiteConfigStore = create<WebsiteConfigStore>()(
       registerTypes: [],
       pricingPageTitle: "",
       pricingPageSubTitle: "",
+      payPageTitle: "",
+      payPageSubTitle: "",
       chatPageSubTitle: "",
       sensitiveWordsTip: "",
       balanceNotEnough: "",
       hideGithubIcon: false,
       botHello: "",
+      logoUrl: "",
 
       async fetchWebsiteConfig() {
         return fetch("/api/globalConfig/website", {
@@ -63,6 +72,7 @@ export const useWebsiteConfigStore = create<WebsiteConfigStore>()(
           .then((res: WebsiteConfigResponse) => {
             console.log("[GlobalConfig] got website config from server", res);
             const website = res.data.websiteContent;
+            // console.log('store: website.logoUuid', website.logoUuid)
             set(() => ({
               title: website.title,
               subTitle: website.subTitle,
@@ -74,11 +84,19 @@ export const useWebsiteConfigStore = create<WebsiteConfigStore>()(
                   : ["OnlyUsername"],
               pricingPageTitle: website.pricingPageTitle,
               pricingPageSubTitle: website.pricingPageSubTitle,
+              payPageTitle: website.payPageTitle,
+              payPageSubTitle: website.payPageSubTitle,
               chatPageSubTitle: website.chatPageSubTitle,
               sensitiveWordsTip: website.sensitiveWordsTip,
               balanceNotEnough: website.balanceNotEnough,
               hideGithubIcon: website.hideGithubIcon,
               botHello: website.botHello,
+              logoUrl:
+                website.logoUuid !== undefined &&
+                website.logoUuid !== null &&
+                website.logoUuid !== ""
+                  ? "/api/file/" + website.logoUuid
+                  : "",
             }));
             return res;
           })

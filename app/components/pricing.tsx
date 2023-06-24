@@ -3,7 +3,14 @@ import { useState, useEffect } from "react";
 import styles from "./pricing.module.scss";
 
 import CloseIcon from "../icons/close.svg";
-import { Input, List, DangerousListItem, Modal, PasswordInput } from "./ui-lib";
+import {
+  Input,
+  List,
+  DangerousListItem,
+  ListItem,
+  Modal,
+  PasswordInput,
+} from "./ui-lib";
 
 import { IconButton } from "./button";
 import { useAuthStore, useAccessStore, useWebsiteConfigStore } from "../store";
@@ -13,8 +20,9 @@ import { Path } from "../constant";
 import { ErrorBoundary } from "./error";
 import { useNavigate } from "react-router-dom";
 import { showToast } from "./ui-lib";
+import { useRouter } from "next/navigation";
 
-interface Package {
+export interface Package {
   id: number;
   state: number;
   calcType: string;
@@ -37,6 +45,7 @@ interface PackageResponse {
 }
 
 export function Pricing() {
+  const router = useRouter();
   const navigate = useNavigate();
   const authStore = useAuthStore();
 
@@ -81,16 +90,26 @@ export function Pricing() {
               pkg.subTitle =
                 `<ul style="margin-top: 5px;padding-inline-start: 10px;">` +
                 (pkg.tokens
-                  ? `<li>${prefix} <span style="font-size: 18px;">${pkg.tokens}</span> tokens</li>`
+                  ? `<li>${prefix} <span style="font-size: 18px;">${
+                      pkg.tokens === -1 ? "无限" : pkg.tokens
+                    }</span> tokens</li>`
                   : "") +
                 (pkg.chatCount
-                  ? `<li>${prefix} <span style="font-size: 18px;">${pkg.chatCount}</span> 次基础聊天（GPT3.5）</li>`
+                  ? `<li>${prefix} <span style="font-size: 18px;">${
+                      pkg.chatCount === -1 ? "无限" : pkg.chatCount
+                    }</span> 次基础聊天（GPT3.5）</li>`
                   : "") +
                 (pkg.advancedChatCount
-                  ? `<li>${prefix} <span style="font-size: 18px;">${pkg.advancedChatCount}</span> 次高级聊天（GPT4）</li>`
+                  ? `<li>${prefix} <span style="font-size: 18px;">${
+                      pkg.advancedChatCount === -1
+                        ? "无限"
+                        : pkg.advancedChatCount
+                    }</span> 次高级聊天（GPT4）</li>`
                   : "") +
                 (pkg.drawCount
-                  ? `<li>${prefix} <span style="font-size: 18px;">${pkg.drawCount}</span> 次AI绘画</li>`
+                  ? `<li>${prefix} <span style="font-size: 18px;">${
+                      pkg.drawCount === -1 ? "无限" : pkg.drawCount
+                    }</span> 次AI绘画</li>`
                   : "") +
                 `<li>有效期： <span style="font-size: 18px;">${pkg.days}</span> 天</li>` +
                 `</ul>`;
@@ -106,7 +125,58 @@ export function Pricing() {
 
   function handleClickBuy(pkg: Package) {
     console.log("buy pkg", pkg);
-    showToast(Locale.PricingPage.ConsultAdministrator);
+    setLoading(true);
+    fetch("/api/order", {
+      method: "post",
+      headers: {
+        Authorization: "Bearer " + authStore.token,
+        "Content-Type": "application/json",
+      },
+
+      body: JSON.stringify({
+        packageUuid: pkg.uuid,
+        count: 1,
+      }),
+    })
+      .then((res) => res.json())
+      .then((res) => {
+        console.log("resp.data", res.data);
+        const order = res.data;
+        if (res.code !== 0) {
+          if (res.code === 11303) {
+            showToast(Locale.PricingPage.TOO_FREQUENCILY);
+          } else {
+            const message = Locale.PricingPage.BuyFailedCause + res.message;
+            showToast(message);
+          }
+          return;
+        }
+
+        if (order.state === 5) {
+          // console.log(log.message?.url)
+          // window.open(log.message?.url, "_blank");
+          console.log("router.push", order.payUrl);
+          if (order.payChannel === "xunhu") {
+            router.push(order.payUrl);
+          } else {
+            navigate(Path.Pay + "?uuid=" + order.uuid);
+          }
+          //
+        } else {
+          const logs = JSON.parse(order.logs);
+          // console.log('order.logs', logs)
+          const log = logs[0];
+          const message =
+            Locale.PricingPage.BuyFailedCause +
+            (log.message?.message || log.message);
+          console.error(message);
+          showToast(message);
+        }
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+    // showToast(Locale.PricingPage.ConsultAdministrator);
   }
 
   return (
@@ -179,6 +249,7 @@ export function Pricing() {
                       text={Locale.PricingPage.Actions.Buy}
                       type="primary"
                       block={true}
+                      disabled={loading}
                       onClick={() => {
                         handleClickBuy(item);
                       }}
@@ -189,6 +260,19 @@ export function Pricing() {
             </List>
           );
         })}
+
+        <List>
+          <ListItem>
+            <IconButton
+              text={Locale.PricingPage.Actions.Order}
+              block={true}
+              type="second"
+              onClick={() => {
+                navigate(Path.Order);
+              }}
+            />
+          </ListItem>
+        </List>
       </div>
     </ErrorBoundary>
   );
