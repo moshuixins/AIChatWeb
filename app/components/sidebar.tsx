@@ -6,6 +6,7 @@ import { IconButton } from "./button";
 import SettingsIcon from "../icons/settings.svg";
 import GithubIcon from "../icons/github.svg";
 import BookOpenIcon from "../icons/book-open.svg";
+import NoticeIcon from "../icons/notice.svg";
 // import LoginIcon from "../icons/login.svg";
 // import ChatGptIcon from "../icons/chatgpt.svg";
 import ChatBotIcon from "../icons/ai-chat-bot.png";
@@ -33,7 +34,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { useMobileScreen } from "../utils";
 import dynamic from "next/dynamic";
-import { showToast } from "./ui-lib";
+import { showConfirm, showToast } from "./ui-lib";
 
 const ChatList = dynamic(async () => (await import("./chat-list")).ChatList, {
   loading: () => null,
@@ -44,14 +45,11 @@ function useHotKey() {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.metaKey || e.altKey || e.ctrlKey) {
-        const n = chatStore.sessions.length;
-        const limit = (x: number) => (x + n) % n;
-        const i = chatStore.currentSessionIndex;
+      if (e.altKey || e.ctrlKey) {
         if (e.key === "ArrowUp") {
-          chatStore.selectSession(limit(i - 1));
+          chatStore.nextSession(-1);
         } else if (e.key === "ArrowDown") {
-          chatStore.selectSession(limit(i + 1));
+          chatStore.nextSession(1);
         }
       }
     };
@@ -183,20 +181,28 @@ export function SideBar(props: {
         shouldNarrow && styles["narrow-sidebar"]
       }`}
     >
-      <div className={styles["sidebar-header"]}>
-        <div className={styles["sidebar-title"]}>
-          {websiteConfigStore.title || "AI Chat"}
-        </div>
-        <div className={styles["sidebar-sub-title"]}>
-          {websiteConfigStore.subTitle || "Build your own AI assistant."}
-        </div>
+      <div className={styles["sidebar-header"]} data-tauri-drag-region>
+        <div
+          className={styles["sidebar-title"]}
+          dangerouslySetInnerHTML={{
+            __html: websiteConfigStore.mainTitle || "AI Chat",
+          }}
+          data-tauri-drag-region
+        ></div>
+        <div
+          className={styles["sidebar-sub-title"]}
+          dangerouslySetInnerHTML={{
+            __html:
+              websiteConfigStore.subTitle || "Build your own AI assistant.",
+          }}
+        ></div>
         <div className={styles["sidebar-logo"] + " no-dark"}>
           {logoLoading ? (
             <></>
           ) : !logoUrl ? (
             <NextImage src={ChatBotIcon.src} width={44} height={44} alt="bot" />
           ) : (
-            <img src={logoUrl} width={44} height={44} />
+            <NextImage src={logoUrl} width={44} height={44} alt="bot" />
           )}
         </div>
       </div>
@@ -234,8 +240,8 @@ export function SideBar(props: {
           <div className={styles["sidebar-action"] + " " + styles.mobile}>
             <IconButton
               icon={<CloseIcon />}
-              onClick={() => {
-                if (confirm(Locale.Home.DeleteChat)) {
+              onClick={async () => {
+                if (await showConfirm(Locale.Home.DeleteChat)) {
                   chatStore.deleteSession(chatStore.currentSessionIndex);
                 }
               }}
@@ -249,7 +255,7 @@ export function SideBar(props: {
           {props.noticeTitle || props.noticeContent ? (
             <div className={styles["sidebar-action"]}>
               <IconButton
-                icon={<BookOpenIcon />}
+                icon={<NoticeIcon />}
                 onClick={() => {
                   props.setNoticeShow(true);
                 }}

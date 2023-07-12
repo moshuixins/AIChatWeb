@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import Image from "next/image";
+import NextImage from "next/image";
 
 import styles from "./register.module.scss";
 
@@ -64,6 +64,7 @@ export function Register() {
   const [password, setPassword] = useState("");
   const [comfirmedPassword, setComfirmedPassword] = useState("");
   const [captchaInput, setCaptchaInput] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   function handleClickSendEmailCode() {
     if (email === null || email == "") {
       showToast(Locale.RegisterPage.Toast.EmailIsEmpty);
@@ -135,6 +136,7 @@ export function Register() {
         captchaInput,
         email,
         emailCode,
+        inviteCode,
       )
       .then((result) => {
         console.log("result", result);
@@ -178,7 +180,7 @@ export function Register() {
 
   return (
     <ErrorBoundary>
-      <div className="window-header">
+      <div className="window-header" data-tauri-drag-region>
         <div className="window-header-title">
           <div className="window-header-main-title">
             {Locale.RegisterPage.Title}
@@ -198,7 +200,7 @@ export function Register() {
       </div>
       <div className={styles["register"]}>
         <List>
-          <ListItem
+          {/* <ListItem
             title={Locale.RegisterPage.Name.Title}
             subTitle={Locale.RegisterPage.Name.SubTitle}
           >
@@ -209,7 +211,7 @@ export function Register() {
                 setName(e.currentTarget.value);
               }}
             />
-          </ListItem>
+          </ListItem> */}
 
           {registerType ===
           REG_TYPE_USERNAME_AND_EMAIL_WITH_CAPTCHA_AND_CODE ? (
@@ -313,14 +315,14 @@ export function Register() {
               <ListItem title={Locale.RegisterPage.Captcha}>
                 <div>
                   {captcha ? (
-                    <img
+                    <NextImage
                       alt={Locale.RegisterPage.Captcha}
                       src={captcha}
                       width="100"
                       height="40"
                       title={Locale.RegisterPage.CaptchaTitle}
                       style={{ cursor: "pointer" }}
-                      onClick={(e) => getRegisterCaptcha(captchaId)}
+                      onClick={() => getRegisterCaptcha(captchaId)}
                     />
                   ) : (
                     <></>
@@ -344,11 +346,21 @@ export function Register() {
             <></>
           )}
 
+          <ListItem title={Locale.Profile.InviteCode}>
+            <SingleInput
+              value={inviteCode}
+              onChange={(e) => {
+                setInviteCode(e.currentTarget.value);
+              }}
+            />
+          </ListItem>
+
           <ListItem>
             <IconButton
               type="primary"
               text={Locale.RegisterPage.Title}
               block={true}
+              disabled={loadingUsage}
               onClick={() => {
                 console.log(username, password);
                 register();
@@ -359,6 +371,7 @@ export function Register() {
           <ListItem>
             <IconButton
               text={Locale.RegisterPage.GoToLogin}
+              type="second"
               onClick={() => {
                 navigate(Path.Login);
               }}

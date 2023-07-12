@@ -4,6 +4,7 @@ import { StoreKey } from "../constant";
 
 export interface WebsiteConfigStore {
   title: string;
+  mainTitle: string;
   subTitle: string;
   loginPageSubTitle: string;
   registerPageSubTitle: string;
@@ -18,11 +19,13 @@ export interface WebsiteConfigStore {
   hideGithubIcon: boolean;
   botHello: string;
   logoUrl?: string;
+  availableModelNames: string[];
   fetchWebsiteConfig: () => Promise<any>;
 }
 
 export interface WebsiteConfig {
   title: string;
+  mainTitle: string;
   subTitle: string;
   loginPageSubTitle: string;
   registerPageSubTitle: string;
@@ -37,6 +40,7 @@ export interface WebsiteConfig {
   hideGithubIcon: boolean;
   botHello: string;
   logoUuid?: string;
+  availableModelNames: string[];
 }
 export interface WebsiteConfigData {
   websiteContent: WebsiteConfig;
@@ -49,6 +53,7 @@ export const useWebsiteConfigStore = create<WebsiteConfigStore>()(
   persist(
     (set, get) => ({
       title: "",
+      mainTitle: "",
       subTitle: "",
       loginPageSubTitle: "",
       registerPageSubTitle: "",
@@ -63,9 +68,15 @@ export const useWebsiteConfigStore = create<WebsiteConfigStore>()(
       hideGithubIcon: false,
       botHello: "",
       logoUrl: "",
+      availableModelNames: [],
 
       async fetchWebsiteConfig() {
-        return fetch("/api/globalConfig/website", {
+        const url = "/globalConfig/website";
+        const BASE_URL = process.env.BASE_URL;
+        const mode = process.env.BUILD_MODE;
+        console.log("mode", mode);
+        let requestUrl = (mode === "export" ? BASE_URL : "") + "/api" + url;
+        return fetch(requestUrl, {
           method: "get",
         })
           .then((res) => res.json())
@@ -75,6 +86,7 @@ export const useWebsiteConfigStore = create<WebsiteConfigStore>()(
             // console.log('store: website.logoUuid', website.logoUuid)
             set(() => ({
               title: website.title,
+              mainTitle: website.mainTitle,
               subTitle: website.subTitle,
               loginPageSubTitle: website.loginPageSubTitle,
               registerPageSubTitle: website.registerPageSubTitle,
@@ -97,6 +109,7 @@ export const useWebsiteConfigStore = create<WebsiteConfigStore>()(
                 website.logoUuid !== ""
                   ? "/api/file/" + website.logoUuid
                   : "",
+              availableModelNames: website.availableModelNames,
             }));
             return res;
           })
